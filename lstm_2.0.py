@@ -2,9 +2,9 @@ import numpy as np
 from keras import initializers
 from keras.regularizers import l2
 from keras.models import Model
-from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, LSTM
+from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, LSTM, add, multiply
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
-from evaluate import evaluate_model_
+from evaluate import evaluate_model_2
 from Dataset import Dataset
 from time import time
 import numpy as np
@@ -20,14 +20,14 @@ def parse_args():
                         help='Choose a dataset.')
     parser.add_argument('--epochs', type=int, default=100,
                         help='Number of epochs.')
-    parser.add_argument('--batch_size', type=int, default=1024,
+    parser.add_argument('--batch_size', type=int, default=65536,
                         help='Batch size.')
     parser.add_argument('--layers', nargs='?', default='[64, 32,16,8]',
                         help="Size of each layer. Note that the first layer is the "
                              "concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
     parser.add_argument('--reg_layers', nargs='?', default='[0,0,0,0]',
                         help="Regularization for each layer")
-    parser.add_argument('--num_neg', type=int, default=2,
+    parser.add_argument('--num_neg', type=int, default=4,
                         help='Number of negative instances to pair with a positive instance.')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate.')
@@ -47,21 +47,27 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # Input variables
     # user_input = Input(shape=(1,), dtype='int32', name='user_input')
     user_xz_input = Input(shape=(19,), name='user_xz_input')
+    user_input = Input(shape=(1,), name='user_input')
     item_input = Input(shape=(1,), dtype='int32', name='item_input')
 
-    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=int(layers[0] / 2), name='user_embedding',
+    MLP_Embedding_User_xz = Embedding(input_dim=num_users, output_dim=int(layers[0] / 4), name='user_xz_embedding',
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=19)
+    MLP_Embedding_User = Embedding(input_dim=num_items, output_dim=int(layers[0] / 4), name='user_embedding',
+                                   embeddings_regularizer=l2(reg_layers[0]), input_length=1)
     MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=int(layers[0] / 2), name='item_embedding',
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
 
     # Crucial to flatten an embedding vector!
-    encoder = LSTM(32)(MLP_Embedding_User(user_xz_input))
-    # user_latent = Flatten()(encoder)
+    encoder = LSTM(32, dropout=0.2, recurrent_dropout=0.2)(MLP_Embedding_User_xz(user_xz_input))
+    user_latent = Flatten()(MLP_Embedding_User(user_input))
     item_latent = Flatten()(MLP_Embedding_Item(item_input))
+
+    user_result = concatenate([encoder, user_latent])
+
 
     # The 0-th layer is the concatenation of embedding layers
     # vector = merge([user_latent, item_latent], mode = 'concat')
-    vector = concatenate([encoder, item_latent])
+    vector = concatenate([user_result, item_latent])
 
 
     # MLP layers
@@ -73,7 +79,7 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_normal(),
                        name='prediction')(vector)
 
-    model_ = Model(inputs=[user_xz_input, item_input],
+    model_ = Model(inputs=[user_xz_input, user_input, item_input],
                    outputs=prediction)
     print(model_.summary())
     return model_
@@ -189,7 +195,7 @@ if __name__ == '__main__':
 
         # Check Init performance
     t1 = time()
-    (hits, ndcgs) = evaluate_model_(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+    (hits, ndcgs) = evaluate_model_2(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
     hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
     print('Init: HR = %.4f, NDCG = %.4f [%.1f]' % (hr, ndcg, time() - t1))
 
@@ -201,14 +207,14 @@ if __name__ == '__main__':
         user_input, user_xz_input, item_input, labels = get_train_instances(train, train_dict, num_negatives)
 
         # Training
-        hist = model.fit([np.array(user_xz_input), np.array(item_input)],  # input
+        hist = model.fit([np.array(user_xz_input), np.array(user_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
-                         batch_size=batch_size, epochs=1, verbose=1, shuffle=True)
+                         batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
         t2 = time()
 
         # Evaluation
         if epoch % verbose == 0:
-            (hits, ndcgs) = evaluate_model_(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+            (hits, ndcgs) = evaluate_model_2(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
             hr, ndcg, loss = np.array(hits).mean(), np.array(ndcgs).mean(), hist.history['loss'][0]
             print('Iteration %d [%.1f s]: HR = %.4f, NDCG = %.4f, loss = %.4f [%.1f s]'
                   % (epoch, t2 - t1, hr, ndcg, loss, time() - t2))
