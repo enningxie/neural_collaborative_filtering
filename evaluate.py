@@ -100,7 +100,7 @@ def evaluate_model(model, testRatings, testNegatives, K, num_thread):
         return (hits, ndcgs)
     # Single thread
     for idx in range(len(_testRatings)):
-        (hr, ndcg) = eval_one_rating_(idx)
+        (hr, ndcg) = eval_one_rating(idx)
         hits.append(hr)
         ndcgs.append(ndcg)
     return (hits, ndcgs)

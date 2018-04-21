@@ -18,7 +18,7 @@ def parse_args():
                         help='Choose a dataset.')
     parser.add_argument('--epochs', type=int, default=100,
                         help='Number of epochs.')
-    parser.add_argument('--batch_size', type=int, default=256,
+    parser.add_argument('--batch_size', type=int, default=4096,
                         help='Batch size.')
     parser.add_argument('--layers', nargs='?', default='[64, 32,16,8]',
                         help="Size of each layer. Note that the first layer is the "
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     (hits, ndcgs) = evaluate_model(model, testRatings, testNegatives, topK, evaluation_threads)
     hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
     print('Init: HR = %.4f, NDCG = %.4f [%.1f]' % (hr, ndcg, time()-t1))
-    
+
     # Train model
     best_hr, best_ndcg, best_iter = hr, ndcg, -1
     for epoch in range(epochs):
