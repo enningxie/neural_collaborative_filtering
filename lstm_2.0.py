@@ -58,9 +58,8 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
 
     # Crucial to flatten an embedding vector!
-    conv_1 = Conv1D(kernel_size=2, filters=64, padding='same')(MLP_Embedding_User_xz(user_xz_input))
-    pool_1 = AveragePooling1D()(conv_1)
-    lstm_1 = LSTM(32)(pool_1)
+    conv_1 = Conv1D(kernel_size=1, filters=32, padding='same')(MLP_Embedding_User_xz(user_xz_input))
+    lstm_1 = LSTM(32)(conv_1)
     # user_latent = Flatten()(MLP_Embedding_User(user_input))
     item_latent = Flatten()(MLP_Embedding_Item(item_input))
 
