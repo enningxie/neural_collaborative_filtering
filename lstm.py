@@ -4,7 +4,7 @@ from keras.regularizers import l2
 from keras.models import Model
 from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, LSTM
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
-from evaluate import evaluate_model
+from evaluate import evaluate_model_
 from Dataset import Dataset
 from time import time
 import numpy as np
@@ -27,7 +27,7 @@ def parse_args():
                              "concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
     parser.add_argument('--reg_layers', nargs='?', default='[0,0,0,0]',
                         help="Regularization for each layer")
-    parser.add_argument('--num_neg', type=int, default=4,
+    parser.add_argument('--num_neg', type=int, default=2,
                         help='Number of negative instances to pair with a positive instance.')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='Learning rate.')
@@ -162,12 +162,16 @@ if __name__ == '__main__':
     train, testRatings, testNegatives = dataset.trainMatrix, dataset.testRatings, dataset.testNegatives
     num_users, num_items = train.shape
 
-    # # xz
+    # xz
     # user_input, user_xz_input, item_input, labels = get_train_instances(train, train_dict, num_negatives)
-    # # user_input_, item_input_, labels_ = get_train_instances_(train_dict, num_negatives)
-    # # print(len(user_input), len(item_input), len(labels))
-    # # print(len(user_input_), len(item_input_), len(labels_))
+    # user_input_, item_input_, labels_ = get_train_instances_(train_dict, num_negatives)
+    # print(len(user_input), len(item_input), len(labels))
+    # print(len(user_input_), len(item_input_), len(labels_))
     # print(np.array(user_input).shape, np.array(user_xz_input).shape, np.array(labels).shape)
+    # print(len(train.keys()))
+
+    # -----------------------------------------------------
+
 
     print("Load data done [%.1f s]. #user=%d, #item=%d, #train=%d, #test=%d"
           % (time() - t1, num_users, num_items, train.nnz, len(testRatings)))
@@ -185,7 +189,7 @@ if __name__ == '__main__':
 
         # Check Init performance
     t1 = time()
-    (hits, ndcgs) = evaluate_model(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+    (hits, ndcgs) = evaluate_model_(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
     hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
     print('Init: HR = %.4f, NDCG = %.4f [%.1f]' % (hr, ndcg, time() - t1))
 
@@ -204,7 +208,7 @@ if __name__ == '__main__':
 
         # Evaluation
         if epoch % verbose == 0:
-            (hits, ndcgs) = evaluate_model(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+            (hits, ndcgs) = evaluate_model_(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
             hr, ndcg, loss = np.array(hits).mean(), np.array(ndcgs).mean(), hist.history['loss'][0]
             print('Iteration %d [%.1f s]: HR = %.4f, NDCG = %.4f, loss = %.4f [%.1f s]'
                   % (epoch, t2 - t1, hr, ndcg, loss, time() - t2))
