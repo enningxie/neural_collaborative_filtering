@@ -209,7 +209,7 @@ if __name__ == '__main__':
         user_input, user_xz_input, item_input, labels = get_train_instances(train, train_dict, num_negatives)
 
         # Training
-        hist = model.fit([np.array(user_xz_input), np.array(user_input), np.array(item_input)],  # input
+        hist = model.fit([np.array(user_xz_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
                          batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
         t2 = time()
