@@ -71,18 +71,20 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     u_i_con = concatenate([user_flatten, item_flatten], name='u_i_con')
     add_1 = add([u_i_con, lstm_1], name='add_1')
 
-    dense_1 = Dense(32, activation='relu', name='dense_1')(add_1)
+    dense_1 = Dense(128, activation='relu', name='dense_1')(add_1)
 
 
-    dense_2 = Dense(16, activation='relu', name='dense_2')(dense_1)
+    dense_2 = Dense(64, activation='relu', name='dense_2')(dense_1)
 
-    dense_3 = Dense(8, activation='relu', name='dense_3')(dense_2)
+    dense_3 = Dense(32, activation='relu', name='dense_3')(dense_2)
+
+    dense_4 = Dense(16, activation='relu', name='dense_3')(dense_3)
 
 
 
     # Final prediction layer
     prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_normal(),
-                       name='prediction')(dense_3)
+                       name='prediction')(dense_4)
 
     model_ = Model(inputs=[user_xz_input, user_input, item_input],
                    outputs=prediction)
