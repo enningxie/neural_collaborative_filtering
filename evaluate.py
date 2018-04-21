@@ -8,9 +8,10 @@ _model = None
 _testRatings = None
 _testNegatives = None
 _K = None
+_train_dict = None
 
 
-def evaluate_model(model, testRatings, testNegatives, K, num_thread):
+def evaluate_model(model, train_dict, testRatings, testNegatives, K, num_thread):
     """
     Evaluate the performance (Hit_Ratio, NDCG) of top-K recommendation
     Return: score of each test rating.
@@ -23,6 +24,7 @@ def evaluate_model(model, testRatings, testNegatives, K, num_thread):
     _testRatings = testRatings
     _testNegatives = testNegatives
     _K = K
+    _train_dict = train_dict
         
     hits, ndcgs = [], []
     if num_thread > 1:  # Multi-thread
@@ -35,11 +37,37 @@ def evaluate_model(model, testRatings, testNegatives, K, num_thread):
         return (hits, ndcgs)
     # Single thread
     for idx in range(len(_testRatings)):
-        (hr, ndcg) = eval_one_rating(idx)
+        (hr, ndcg) = eval_one_rating_(idx, _train_dict)
         hits.append(hr)
         ndcgs.append(ndcg)      
     return (hits, ndcgs)
 
+
+def eval_one_rating_(idx, train_dict):
+    rating = _testRatings[idx]
+    items = _testNegatives[idx]
+    u = rating[0]
+    u_ = train_dict[u][:19]
+    gtItem = rating[1]
+    items.append(gtItem)
+    # Get prediction scores
+    map_item_score = {}
+    users = []
+    for _ in range(len(items)):
+        users.append(u_)
+    # users = np.full(len(items), u_, dtype='int32')
+    predictions = _model.predict([np.array(users), np.array(items)],
+                                 batch_size=100, verbose=0)
+    for i in range(len(items)):
+        item = items[i]
+        map_item_score[item] = predictions[i]
+    items.pop()
+
+    # Evaluate top rank list
+    ranklist = heapq.nlargest(_K, map_item_score, key=map_item_score.get)
+    hr = getHitRatio(ranklist, gtItem)
+    ndcg = getNDCG(ranklist, gtItem)
+    return (hr, ndcg)
 
 def eval_one_rating(idx):
     rating = _testRatings[idx]

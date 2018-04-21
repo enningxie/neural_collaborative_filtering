@@ -2,7 +2,7 @@ import numpy as np
 from keras import initializers
 from keras.regularizers import l2
 from keras.models import Model
-from keras.layers import Embedding, Input, Dense, Flatten, concatenate
+from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
 from evaluate import evaluate_model
 from Dataset import Dataset
@@ -20,7 +20,7 @@ def parse_args():
                         help='Number of epochs.')
     parser.add_argument('--batch_size', type=int, default=256,
                         help='Batch size.')
-    parser.add_argument('--layers', nargs='?', default='[64,32,16,8]',
+    parser.add_argument('--layers', nargs='?', default='[64, 32,16,8]',
                         help="Size of each layer. Note that the first layer is the "
                              "concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
     parser.add_argument('--reg_layers', nargs='?', default='[0,0,0,0]',
@@ -49,7 +49,7 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
     MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=int(layers[0]/2), name='item_embedding',
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
-    
+
     # Crucial to flatten an embedding vector!
     user_latent = Flatten()(MLP_Embedding_User(user_input))
     item_latent = Flatten()(MLP_Embedding_Item(item_input))
@@ -57,6 +57,12 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # The 0-th layer is the concatenation of embedding layers
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
+
+    vector_re = Reshape((1, 64))(vector)
+
+    conv_ = Conv1D(filters=64, kernel_size=2, padding='same')(vector_re)
+
+    vector = Flatten()(conv_)
     
     # MLP layers
     for idx in range(1, num_layer):
@@ -69,7 +75,7 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     
     model_ = Model(inputs=[user_input, item_input],
                    outputs=prediction)
-    
+    print(model_.summary())
     return model_
 
 
