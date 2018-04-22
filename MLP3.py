@@ -2,13 +2,11 @@ import numpy as np
 from keras import initializers
 from keras.regularizers import l2
 from keras.models import Model
-from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, LSTM, add, multiply, GRU, AveragePooling1D
+from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, AveragePooling1D
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
-from evaluate import evaluate_model_2
+from evaluate import evaluate_model
 from Dataset import Dataset
 from time import time
-import numpy as np
-import pandas as pd
 import argparse
 
 
@@ -20,7 +18,7 @@ def parse_args():
                         help='Choose a dataset.')
     parser.add_argument('--epochs', type=int, default=100,
                         help='Number of epochs.')
-    parser.add_argument('--batch_size', type=int, default=16384,
+    parser.add_argument('--batch_size', type=int, default=4096,
                         help='Batch size.')
     parser.add_argument('--layers', nargs='?', default='[64, 32,16,8]',
                         help="Size of each layer. Note that the first layer is the "
@@ -37,7 +35,6 @@ def parse_args():
                         help='Show performance per X iterations')
     parser.add_argument('--out', type=int, default=1,
                         help='Whether to save the trained model.')
-    parser.add_argument('--train_pd_path', type=str, default='./Data/ratings_train.csv')
     return parser.parse_args()
 
 
@@ -45,85 +42,47 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     assert len(layers) == len(reg_layers)
     num_layer = len(layers)  # Number of layers in the MLP
     # Input variables
-    # user_input = Input(shape=(1,), dtype='int32', name='user_input')
-
-    user_input = Input(shape=(1,), name='user_input')
+    user_input = Input(shape=(1,), dtype='int32', name='user_input')
     item_input = Input(shape=(1,), dtype='int32', name='item_input')
-    user_xz_input = Input(shape=(19,), name='user_xz_input')
 
-
-    MLP_Embedding_User = Embedding(input_dim=num_items, output_dim=int(layers[0] / 2), name='user_embedding',
+    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=int(layers[0] / 2), name='user_embedding',
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
     MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=int(layers[0] / 2), name='item_embedding',
                                    embeddings_regularizer=l2(reg_layers[0]), input_length=1)
-    MLP_Embedding_User_xz = Embedding(input_dim=num_users, output_dim=int(layers[0]), name='user_xz_embedding',
-                                      embeddings_regularizer=l2(reg_layers[0]), input_length=19)
 
-    user_ = MLP_Embedding_User(user_input)
-    item_ = MLP_Embedding_Item(item_input)
-    ui_ = MLP_Embedding_User_xz(user_xz_input)
+    # Crucial to flatten an embedding vector!
+    user_latent = Flatten()(MLP_Embedding_User(user_input))
+    item_latent = Flatten()(MLP_Embedding_Item(item_input))
 
-    lstm_1 = LSTM(64, activation='relu')(ui_)
+    # The 0-th layer is the concatenation of embedding layers
+    # vector = merge([user_latent, item_latent], mode = 'concat')
+    vector = concatenate([user_latent, item_latent])
 
-    user_flatten = Flatten()(user_)
-    item_flatten = Flatten()(item_)
-
-    u_i_con = concatenate([user_flatten, item_flatten], name='u_i_con')
-
-    dense_1 = Dense(128, activation='relu', name='dense_1')(u_i_con)
-
-    dense_2 = Dense(64, activation='relu', name='dense_2')(dense_1)
-
-    add_1 = add([dense_2, lstm_1], name='add_1')
-
-    dense_3 = Dense(32, activation='relu', name='dense_3')(add_1)
-
-    dense_4 = Dense(16, activation='relu', name='dense_4')(dense_3)
-
-    dense_5 = Dense(8, activation='relu', name='dense_5')(dense_4)
+    conv_1 = Conv1D(filters=32, kernel_size=2, padding='same')(vector)
+    pool_1 = AveragePooling1D()(conv_1)
+    conv_2 = Conv1D(filters=16, kernel_size=1, padding='same')(pool_1)
+    pool_2 = AveragePooling1D(conv_2)
+    coov_3 = Conv1D(filters=8, kernel_size=1, padding='same')(pool_2)
 
 
 
     # Final prediction layer
     prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_normal(),
-                       name='prediction')(dense_5)
+                       name='prediction')(coov_3)
 
-    model_ = Model(inputs=[user_xz_input, user_input, item_input],
+    model_ = Model(inputs=[user_input, item_input],
                    outputs=prediction)
     print(model_.summary())
     return model_
 
 
-def get_train_instances_(train, num_negatives):
+def get_train_instances(train, num_negatives):
     user_input, item_input, labels = [], [], []
-    for u in train.keys():
-        tmp_item = []
-        # positive instance
-        user_input.append(u)
-        tmp_item.extend(train[u][:19])
-        tmp_label = list(np.full(19, 1))
-        # negative instances
-        for t in range(num_negatives):
-            j = np.random.randint(num_items)
-            # while train.has_key((u, j)):
-            while j in train[u]:
-                j = np.random.randint(num_items)
-            tmp_item.append(j)
-            tmp_label.append(0)
-        item_input.append(tmp_item)
-        labels.append(tmp_label)
-
-    return user_input, item_input, labels
-
-
-def get_train_instances(train, train_dict, num_negatives):
-    user_input, user_xz_input, item_input, labels = [], [], [], []
-
+    num_users = train.shape[0]
     for (u, i) in train.keys():
         # positive instance
         user_input.append(u)
         item_input.append(i)
-        user_xz_input.append(train_dict[u][:19])
         labels.append(1)
         # negative instances
         for t in range(num_negatives):
@@ -132,21 +91,9 @@ def get_train_instances(train, train_dict, num_negatives):
             while (u, j) in train.keys():
                 j = np.random.randint(num_items)
             user_input.append(u)
-            user_xz_input.append(train_dict[u][:19])
             item_input.append(j)
             labels.append(0)
-    return user_input, user_xz_input, item_input, labels
-
-
-# return a dict,
-# {user_id: [movie_id1, movie_id2, movie_id3, ...]}
-def get_dict_from_pd(pd_path):
-    ratings_dict = dict()
-    ratings_pd = pd.read_csv(pd_path)
-    ratings_pd_grouped = ratings_pd.groupby(['UserID'])
-    for k in ratings_pd_grouped.groups.keys():
-        ratings_dict[k] = list(ratings_pd_grouped.get_group(k).sort_values(by='Timestamp')['MovieID'])
-    return ratings_dict
+    return user_input, item_input, labels
 
 
 if __name__ == '__main__':
@@ -158,13 +105,9 @@ if __name__ == '__main__':
     num_negatives = args.num_neg
     learner = args.learner
     learning_rate = args.lr
-    # xz add train_dict
-    train_dict = get_dict_from_pd(args.train_pd_path)
     batch_size = args.batch_size
     epochs = args.epochs
     verbose = args.verbose
-
-
 
     topK = 10
     evaluation_threads = 1  # mp.cpu_count()
@@ -176,18 +119,6 @@ if __name__ == '__main__':
     dataset = Dataset(args.path + args.dataset)
     train, testRatings, testNegatives = dataset.trainMatrix, dataset.testRatings, dataset.testNegatives
     num_users, num_items = train.shape
-
-    # xz
-    # user_input, user_xz_input, item_input, labels = get_train_instances(train, train_dict, num_negatives)
-    # user_input_, item_input_, labels_ = get_train_instances_(train_dict, num_negatives)
-    # print(len(user_input), len(item_input), len(labels))
-    # print(len(user_input_), len(item_input_), len(labels_))
-    # print(np.array(user_input).shape, np.array(user_xz_input).shape, np.array(labels).shape)
-    # print(len(train.keys()))
-
-    # -----------------------------------------------------
-
-
     print("Load data done [%.1f s]. #user=%d, #item=%d, #train=%d, #test=%d"
           % (time() - t1, num_users, num_items, train.nnz, len(testRatings)))
 
@@ -198,13 +129,13 @@ if __name__ == '__main__':
     elif learner.lower() == "rmsprop":
         model.compile(optimizer=RMSprop(lr=learning_rate), loss='binary_crossentropy')
     elif learner.lower() == "adam":
-        model.compile(optimizer=Adam(lr=learning_rate), loss='binary_crossentropy')
+        model.compile(optimizer=Adam(lr=learning_rate, clipnorm=1.), loss='binary_crossentropy')
     else:
         model.compile(optimizer=SGD(lr=learning_rate), loss='binary_crossentropy')
 
         # Check Init performance
     t1 = time()
-    (hits, ndcgs) = evaluate_model_2(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+    (hits, ndcgs) = evaluate_model(model, testRatings, testNegatives, topK, evaluation_threads)
     hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
     print('Init: HR = %.4f, NDCG = %.4f [%.1f]' % (hr, ndcg, time() - t1))
 
@@ -213,17 +144,17 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         t1 = time()
         # Generate training instances
-        user_input, user_xz_input, item_input, labels = get_train_instances(train, train_dict, num_negatives)
+        user_input, item_input, labels = get_train_instances(train, num_negatives)
 
         # Training
-        hist = model.fit([np.array(user_xz_input), np.array(user_input), np.array(item_input)],  # input
+        hist = model.fit([np.array(user_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
                          batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
         t2 = time()
 
         # Evaluation
         if epoch % verbose == 0:
-            (hits, ndcgs) = evaluate_model_2(model, train_dict, testRatings, testNegatives, topK, evaluation_threads)
+            (hits, ndcgs) = evaluate_model(model, testRatings, testNegatives, topK, evaluation_threads)
             hr, ndcg, loss = np.array(hits).mean(), np.array(ndcgs).mean(), hist.history['loss'][0]
             print('Iteration %d [%.1f s]: HR = %.4f, NDCG = %.4f, loss = %.4f [%.1f s]'
                   % (epoch, t2 - t1, hr, ndcg, loss, time() - t2))
