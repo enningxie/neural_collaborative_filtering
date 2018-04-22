@@ -78,7 +78,7 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
 
     dense_3 = Dense(32, activation='relu', name='dense_3')(dense_2)
 
-    dense_4 = Dense(16, activation='relu', name='dense_3')(dense_3)
+    dense_4 = Dense(16, activation='relu', name='dense_4')(dense_3)
 
 
 
