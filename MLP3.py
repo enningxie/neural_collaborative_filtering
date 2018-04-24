@@ -58,19 +58,20 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
 
-    vector_re = Reshape((1, 64))(vector)
 
-    conv_1 = Conv1D(filters=32, kernel_size=2, padding='same')(vector_re)
+    conv_1 = Conv1D(filters=32, kernel_size=2, padding='same')(vector)
     pool_1 = AveragePooling1D(pool_size=2, strides=2)(conv_1)
     conv_2 = Conv1D(filters=16, kernel_size=1, padding='same')(pool_1)
     pool_2 = AveragePooling1D(pool_size=2, strides=2)(conv_2)
-    coov_3 = Conv1D(filters=8, kernel_size=1, padding='same')(pool_2)
+    conv_3 = Conv1D(filters=8, kernel_size=1, padding='same')(pool_2)
+
+    flatten_1 = Flatten()(conv_3)
 
 
 
     # Final prediction layer
     prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_normal(),
-                       name='prediction')(coov_3)
+                       name='prediction')(flatten_1)
 
     model_ = Model(inputs=[user_input, item_input],
                    outputs=prediction)
