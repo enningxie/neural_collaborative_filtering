@@ -57,11 +57,24 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # The 0-th layer is the concatenation of embedding layers
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
+<<<<<<< HEAD
     vector_re = Reshape((1, 64))(vector)
 
     conv_1 = Conv1D(filters=32, kernel_size=1, padding='same')(vector_re)
     conv_2 = Conv1D(filters=16, kernel_size=1, padding='same')(conv_1)
     conv_3 = Conv1D(filters=8, kernel_size=1, padding='same')(conv_2)
+=======
+
+
+    conv_1 = Conv1D(filters=32, kernel_size=2, padding='same')(vector)
+    pool_1 = AveragePooling1D(pool_size=2, strides=2)(conv_1)
+    conv_2 = Conv1D(filters=16, kernel_size=1, padding='same')(pool_1)
+    pool_2 = AveragePooling1D(pool_size=2, strides=2)(conv_2)
+    conv_3 = Conv1D(filters=8, kernel_size=1, padding='same')(pool_2)
+
+    flatten_1 = Flatten()(conv_3)
+
+>>>>>>> 38e79b3786e9ed6ae499811ddc15716c2eed34e8
 
     flatten_1 = Flatten()(conv_3)
 
