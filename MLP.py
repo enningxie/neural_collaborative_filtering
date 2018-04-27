@@ -58,12 +58,6 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
 
-    vector_re = Reshape((1, 64))(vector)
-
-    conv_ = Conv1D(filters=64, kernel_size=2, padding='same')(vector_re)
-
-    vector = Flatten()(conv_)
-    
     # MLP layers
     for idx in range(1, num_layer):
         layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)

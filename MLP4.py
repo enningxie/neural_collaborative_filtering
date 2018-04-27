@@ -2,7 +2,7 @@ import numpy as np
 from keras import initializers
 from keras.regularizers import l2
 from keras.models import Model
-from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, AveragePooling1D
+from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, AveragePooling1D, GlobalAveragePooling1D
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
 from evaluate import evaluate_model
 from Dataset import Dataset
@@ -57,18 +57,16 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # The 0-th layer is the concatenation of embedding layers
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
-    vector_re = Reshape((1, 64))(vector)
-
-    conv_1 = Conv1D(filters=32, kernel_size=1, padding='same')(vector_re)
-    conv_2 = Conv1D(filters=16, kernel_size=1, padding='same')(conv_1)
-    conv_3 = Conv1D(filters=8, kernel_size=1, padding='same')(conv_2)
 
 
-    flatten_1 = Flatten()(conv_3)
+    # MLP layers
+    for idx in range(1, num_layer):
+        layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)
+        vector = layer(vector)
 
     # Final prediction layer
     prediction = Dense(1, activation='sigmoid', kernel_initializer=initializers.lecun_normal(),
-                       name='prediction')(flatten_1)
+                       name='prediction')(vector)
 
     model_ = Model(inputs=[user_input, item_input],
                    outputs=prediction)
@@ -129,7 +127,7 @@ if __name__ == '__main__':
     elif learner.lower() == "rmsprop":
         model.compile(optimizer=RMSprop(lr=learning_rate), loss='binary_crossentropy')
     elif learner.lower() == "adam":
-        model.compile(optimizer=Adam(lr=learning_rate, clipnorm=1.), loss='binary_crossentropy')
+        model.compile(optimizer=Adam(lr=learning_rate), loss='binary_crossentropy')
     else:
         model.compile(optimizer=SGD(lr=learning_rate), loss='binary_crossentropy')
 
@@ -146,7 +144,7 @@ if __name__ == '__main__':
         # Generate training instances
         user_input, item_input, labels = get_train_instances(train, num_negatives)
 
-        # Training
+        # Training        
         hist = model.fit([np.array(user_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
                          batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
