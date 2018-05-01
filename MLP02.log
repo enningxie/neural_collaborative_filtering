@@ -1,0 +1,141 @@
+MLP arguments: Namespace(batch_size=4096, dataset='ml-1m', epochs=100, layers='[64, 32,16,8]', learner='adam', lr=0.001, num_neg=4, out=1, path='Data/', reg_layers='[0,0,0,0]', verbose=1) 
+Load data done [11.7 s]. #user=6040, #item=3706, #train=994169, #test=6040
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+user_input (InputLayer)         (None, 1)            0                                            
+__________________________________________________________________________________________________
+item_input (InputLayer)         (None, 1)            0                                            
+__________________________________________________________________________________________________
+user_embedding (Embedding)      (None, 1, 32)        193280      user_input[0][0]                 
+__________________________________________________________________________________________________
+item_embedding (Embedding)      (None, 1, 32)        118592      item_input[0][0]                 
+__________________________________________________________________________________________________
+flatten_1 (Flatten)             (None, 32)           0           user_embedding[0][0]             
+__________________________________________________________________________________________________
+flatten_2 (Flatten)             (None, 32)           0           item_embedding[0][0]             
+__________________________________________________________________________________________________
+concatenate_1 (Concatenate)     (None, 64)           0           flatten_1[0][0]                  
+                                                                 flatten_2[0][0]                  
+__________________________________________________________________________________________________
+attention_vec (Dense)           (None, 64)           4160        concatenate_1[0][0]              
+__________________________________________________________________________________________________
+attention_mul (Multiply)        (None, 64)           0           concatenate_1[0][0]              
+                                                                 attention_vec[0][0]              
+__________________________________________________________________________________________________
+layer1 (Dense)                  (None, 32)           2080        attention_mul[0][0]              
+__________________________________________________________________________________________________
+layer2 (Dense)                  (None, 16)           528         layer1[0][0]                     
+__________________________________________________________________________________________________
+layer3 (Dense)                  (None, 8)            136         layer2[0][0]                     
+__________________________________________________________________________________________________
+prediction (Dense)              (None, 1)            9           layer3[0][0]                     
+==================================================================================================
+Total params: 318,785
+Trainable params: 318,785
+Non-trainable params: 0
+__________________________________________________________________________________________________
+None
+Init: HR = 0.0982, NDCG = 0.0445 [15.2]
+Iteration 0 [23.0 s]: HR = 0.4689, NDCG = 0.2602, loss = 0.3855 [10.2 s]
+Iteration 1 [24.1 s]: HR = 0.4934, NDCG = 0.2749, loss = 0.3344 [9.2 s]
+Iteration 2 [21.9 s]: HR = 0.5293, NDCG = 0.2973, loss = 0.3214 [9.0 s]
+Iteration 3 [21.6 s]: HR = 0.5692, NDCG = 0.3205, loss = 0.3045 [9.1 s]
+Iteration 4 [21.4 s]: HR = 0.5929, NDCG = 0.3343, loss = 0.2907 [9.2 s]
+Iteration 5 [22.2 s]: HR = 0.6111, NDCG = 0.3486, loss = 0.2805 [9.0 s]
+Iteration 6 [21.5 s]: HR = 0.6224, NDCG = 0.3552, loss = 0.2717 [9.3 s]
+Iteration 7 [22.0 s]: HR = 0.6321, NDCG = 0.3625, loss = 0.2654 [9.3 s]
+Iteration 8 [21.9 s]: HR = 0.6462, NDCG = 0.3709, loss = 0.2601 [10.4 s]
+Iteration 9 [24.2 s]: HR = 0.6545, NDCG = 0.3790, loss = 0.2553 [10.1 s]
+Iteration 10 [21.9 s]: HR = 0.6588, NDCG = 0.3822, loss = 0.2509 [9.3 s]
+Iteration 11 [25.2 s]: HR = 0.6659, NDCG = 0.3873, loss = 0.2472 [9.2 s]
+Iteration 12 [21.6 s]: HR = 0.6685, NDCG = 0.3916, loss = 0.2441 [9.2 s]
+Iteration 13 [21.4 s]: HR = 0.6680, NDCG = 0.3937, loss = 0.2415 [9.4 s]
+Iteration 14 [21.5 s]: HR = 0.6742, NDCG = 0.3988, loss = 0.2389 [9.0 s]
+Iteration 15 [21.7 s]: HR = 0.6768, NDCG = 0.4000, loss = 0.2368 [9.0 s]
+Iteration 16 [21.3 s]: HR = 0.6836, NDCG = 0.4035, loss = 0.2347 [9.1 s]
+Iteration 17 [22.9 s]: HR = 0.6899, NDCG = 0.4057, loss = 0.2330 [9.2 s]
+Iteration 18 [22.2 s]: HR = 0.6848, NDCG = 0.4031, loss = 0.2310 [9.1 s]
+Iteration 19 [23.4 s]: HR = 0.6859, NDCG = 0.4037, loss = 0.2297 [9.6 s]
+Iteration 20 [22.1 s]: HR = 0.6825, NDCG = 0.4060, loss = 0.2283 [9.4 s]
+Iteration 21 [22.0 s]: HR = 0.6825, NDCG = 0.4058, loss = 0.2267 [9.4 s]
+Iteration 22 [22.2 s]: HR = 0.6844, NDCG = 0.4062, loss = 0.2257 [8.9 s]
+Iteration 23 [21.6 s]: HR = 0.6849, NDCG = 0.4065, loss = 0.2247 [9.2 s]
+Iteration 24 [21.5 s]: HR = 0.6820, NDCG = 0.4081, loss = 0.2236 [9.3 s]
+Iteration 25 [21.6 s]: HR = 0.6813, NDCG = 0.4074, loss = 0.2224 [10.4 s]
+Iteration 26 [20.8 s]: HR = 0.6877, NDCG = 0.4087, loss = 0.2214 [9.7 s]
+Iteration 27 [23.0 s]: HR = 0.6839, NDCG = 0.4073, loss = 0.2208 [9.1 s]
+Iteration 28 [21.5 s]: HR = 0.6879, NDCG = 0.4075, loss = 0.2200 [10.0 s]
+Iteration 29 [21.6 s]: HR = 0.6825, NDCG = 0.4055, loss = 0.2192 [9.3 s]
+Iteration 30 [21.6 s]: HR = 0.6839, NDCG = 0.4092, loss = 0.2186 [9.8 s]
+Iteration 31 [21.5 s]: HR = 0.6823, NDCG = 0.4086, loss = 0.2177 [9.1 s]
+Iteration 32 [21.7 s]: HR = 0.6871, NDCG = 0.4083, loss = 0.2173 [9.0 s]
+Iteration 33 [22.0 s]: HR = 0.6863, NDCG = 0.4111, loss = 0.2168 [9.2 s]
+Iteration 34 [21.6 s]: HR = 0.6790, NDCG = 0.4081, loss = 0.2166 [9.2 s]
+Iteration 35 [21.7 s]: HR = 0.6815, NDCG = 0.4072, loss = 0.2157 [9.1 s]
+Iteration 36 [21.6 s]: HR = 0.6811, NDCG = 0.4072, loss = 0.2153 [9.3 s]
+Iteration 37 [20.9 s]: HR = 0.6791, NDCG = 0.4059, loss = 0.2146 [8.9 s]
+Iteration 38 [21.5 s]: HR = 0.6816, NDCG = 0.4080, loss = 0.2144 [8.9 s]
+Iteration 39 [21.8 s]: HR = 0.6788, NDCG = 0.4065, loss = 0.2138 [9.8 s]
+Iteration 40 [21.8 s]: HR = 0.6805, NDCG = 0.4053, loss = 0.2132 [9.3 s]
+Iteration 41 [21.3 s]: HR = 0.6839, NDCG = 0.4084, loss = 0.2132 [9.0 s]
+Iteration 42 [27.7 s]: HR = 0.6778, NDCG = 0.4052, loss = 0.2127 [8.9 s]
+Iteration 43 [21.4 s]: HR = 0.6773, NDCG = 0.4063, loss = 0.2120 [9.1 s]
+Iteration 44 [21.6 s]: HR = 0.6763, NDCG = 0.4061, loss = 0.2118 [9.4 s]
+Iteration 45 [21.7 s]: HR = 0.6803, NDCG = 0.4097, loss = 0.2116 [9.1 s]
+Iteration 46 [21.3 s]: HR = 0.6757, NDCG = 0.4065, loss = 0.2112 [9.2 s]
+Iteration 47 [21.9 s]: HR = 0.6793, NDCG = 0.4084, loss = 0.2111 [9.3 s]
+Iteration 48 [21.8 s]: HR = 0.6719, NDCG = 0.4059, loss = 0.2108 [8.7 s]
+Iteration 49 [21.8 s]: HR = 0.6710, NDCG = 0.4046, loss = 0.2102 [8.8 s]
+Iteration 50 [21.7 s]: HR = 0.6747, NDCG = 0.4069, loss = 0.2101 [9.7 s]
+Iteration 51 [22.2 s]: HR = 0.6725, NDCG = 0.4038, loss = 0.2095 [9.5 s]
+Iteration 52 [21.5 s]: HR = 0.6724, NDCG = 0.4031, loss = 0.2093 [9.4 s]
+Iteration 53 [22.3 s]: HR = 0.6705, NDCG = 0.4043, loss = 0.2091 [9.3 s]
+Iteration 54 [22.1 s]: HR = 0.6760, NDCG = 0.4046, loss = 0.2088 [9.3 s]
+Iteration 55 [21.7 s]: HR = 0.6719, NDCG = 0.4019, loss = 0.2086 [9.1 s]
+Iteration 56 [21.2 s]: HR = 0.6684, NDCG = 0.4027, loss = 0.2081 [10.0 s]
+Iteration 57 [21.5 s]: HR = 0.6724, NDCG = 0.4031, loss = 0.2081 [9.4 s]
+Iteration 58 [21.7 s]: HR = 0.6707, NDCG = 0.4039, loss = 0.2080 [9.3 s]
+Iteration 59 [21.9 s]: HR = 0.6656, NDCG = 0.4027, loss = 0.2076 [9.3 s]
+Iteration 60 [21.5 s]: HR = 0.6677, NDCG = 0.4029, loss = 0.2073 [9.5 s]
+Iteration 61 [21.5 s]: HR = 0.6738, NDCG = 0.4042, loss = 0.2071 [9.5 s]
+Iteration 62 [21.6 s]: HR = 0.6684, NDCG = 0.4005, loss = 0.2070 [9.4 s]
+Iteration 63 [23.1 s]: HR = 0.6692, NDCG = 0.4039, loss = 0.2069 [9.3 s]
+Iteration 64 [21.3 s]: HR = 0.6666, NDCG = 0.4026, loss = 0.2065 [9.1 s]
+Iteration 65 [20.9 s]: HR = 0.6619, NDCG = 0.3990, loss = 0.2062 [9.2 s]
+Iteration 66 [21.7 s]: HR = 0.6621, NDCG = 0.4009, loss = 0.2060 [9.0 s]
+Iteration 67 [21.7 s]: HR = 0.6606, NDCG = 0.4013, loss = 0.2059 [9.7 s]
+Iteration 68 [21.8 s]: HR = 0.6641, NDCG = 0.4024, loss = 0.2055 [9.3 s]
+Iteration 69 [22.1 s]: HR = 0.6598, NDCG = 0.4001, loss = 0.2054 [8.7 s]
+Iteration 70 [21.2 s]: HR = 0.6644, NDCG = 0.3989, loss = 0.2054 [9.2 s]
+Iteration 71 [21.7 s]: HR = 0.6570, NDCG = 0.3973, loss = 0.2051 [9.2 s]
+Iteration 72 [21.6 s]: HR = 0.6596, NDCG = 0.3986, loss = 0.2048 [9.3 s]
+Iteration 73 [21.5 s]: HR = 0.6604, NDCG = 0.3990, loss = 0.2045 [9.5 s]
+Iteration 74 [21.7 s]: HR = 0.6548, NDCG = 0.3942, loss = 0.2044 [9.2 s]
+Iteration 75 [21.6 s]: HR = 0.6634, NDCG = 0.3978, loss = 0.2042 [9.4 s]
+Iteration 76 [21.6 s]: HR = 0.6555, NDCG = 0.3964, loss = 0.2042 [9.3 s]
+Iteration 77 [21.5 s]: HR = 0.6594, NDCG = 0.3994, loss = 0.2039 [9.4 s]
+Iteration 78 [21.6 s]: HR = 0.6543, NDCG = 0.3990, loss = 0.2036 [9.6 s]
+Iteration 79 [21.5 s]: HR = 0.6561, NDCG = 0.3988, loss = 0.2037 [9.5 s]
+Iteration 80 [21.9 s]: HR = 0.6555, NDCG = 0.3969, loss = 0.2037 [9.0 s]
+Iteration 81 [21.8 s]: HR = 0.6593, NDCG = 0.3986, loss = 0.2032 [9.1 s]
+Iteration 82 [21.5 s]: HR = 0.6525, NDCG = 0.3962, loss = 0.2030 [9.7 s]
+Iteration 83 [21.3 s]: HR = 0.6541, NDCG = 0.3974, loss = 0.2030 [9.8 s]
+Iteration 84 [21.5 s]: HR = 0.6522, NDCG = 0.3955, loss = 0.2030 [11.3 s]
+Iteration 85 [22.3 s]: HR = 0.6543, NDCG = 0.3981, loss = 0.2031 [9.5 s]
+Iteration 86 [21.6 s]: HR = 0.6586, NDCG = 0.3996, loss = 0.2024 [9.1 s]
+Iteration 87 [21.0 s]: HR = 0.6513, NDCG = 0.3962, loss = 0.2026 [9.5 s]
+Iteration 88 [21.6 s]: HR = 0.6540, NDCG = 0.3972, loss = 0.2025 [9.3 s]
+Iteration 89 [21.6 s]: HR = 0.6528, NDCG = 0.3979, loss = 0.2023 [9.1 s]
+Iteration 90 [21.1 s]: HR = 0.6512, NDCG = 0.3952, loss = 0.2021 [9.4 s]
+Iteration 91 [21.4 s]: HR = 0.6525, NDCG = 0.4000, loss = 0.2019 [8.9 s]
+Iteration 92 [21.4 s]: HR = 0.6517, NDCG = 0.3985, loss = 0.2018 [9.2 s]
+Iteration 93 [22.0 s]: HR = 0.6538, NDCG = 0.3976, loss = 0.2018 [9.1 s]
+Iteration 94 [21.9 s]: HR = 0.6530, NDCG = 0.3991, loss = 0.2014 [9.9 s]
+Iteration 95 [21.7 s]: HR = 0.6512, NDCG = 0.3975, loss = 0.2015 [9.7 s]
+Iteration 96 [21.5 s]: HR = 0.6523, NDCG = 0.3985, loss = 0.2011 [9.7 s]
+Iteration 97 [21.5 s]: HR = 0.6465, NDCG = 0.3968, loss = 0.2013 [9.5 s]
+Iteration 98 [21.8 s]: HR = 0.6465, NDCG = 0.3975, loss = 0.2011 [9.5 s]
+Iteration 99 [21.6 s]: HR = 0.6535, NDCG = 0.3985, loss = 0.2009 [10.3 s]
+End. Best Iteration 17:  HR = 0.6899, NDCG = 0.4057. 
+The best MLP model is saved to Pretrain/ml-1m_MLP_[64, 32,16,8]_1525182057.h5
