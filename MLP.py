@@ -2,7 +2,7 @@ import numpy as np
 from keras import initializers
 from keras.regularizers import l2
 from keras.models import Model
-from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape
+from keras.layers import Embedding, Input, Dense, Flatten, concatenate, Conv1D, Reshape, multiply
 from keras.optimizers import Adagrad, Adam, SGD, RMSprop
 from evaluate import evaluate_model
 from Dataset import Dataset
@@ -57,7 +57,8 @@ def get_model(num_users, num_items, layers=[20, 10], reg_layers=[0, 0]):
     # The 0-th layer is the concatenation of embedding layers
     # vector = merge([user_latent, item_latent], mode = 'concat')
     vector = concatenate([user_latent, item_latent])
-
+    attention_probs = Dense(64, activation='softmax', name='attention_vec')(vector)
+    vector = multiply([vector, attention_probs], name='attention_mul')
     # MLP layers
     for idx in range(1, num_layer):
         layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)
